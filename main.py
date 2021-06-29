@@ -9,7 +9,7 @@ f = open("tokens.txt", "r")
 [CONSUMER_KEY,
 CONSUMER_SECRET,
 ACCESS_TOKEN,
-ACCESS_TOKEN_SECRET] = f.read().split("\n");
+ACCESS_TOKEN_SECRET] = f.read().split("\n")[0:4];
 f.close();
 
 
@@ -57,25 +57,27 @@ twitter = OAuth1Session(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKE
 url = "https://api.twitter.com/1.1/search/tweets.json"
 params = {
     "q": sys.argv[2],
-    "count": 10,
+    "count": sys.argv[1],
     "lang": "ja",
     "tweet_mode": "extended",
     # around Tokyo 1500 km
-    "geocode": "35.6762,139.6503,1500km",
+    "geocode": "35.6762,139.6503,1500km"
     #"result_type":"recent"
 }
+if(len(sys.argv)>3):
+    params["until"] = sys.argv[3]
 #params = {'q': "BigData", 'count': 10, 'lang': "jp", 'tweet_mode': "extended"}
 res = twitter.get(url, params=params)
 if res.status_code == 200:
     tweets = json.loads(res.text)
-    #print(tweets);
+    print("Number of tweets: "+str(len(tweets["statuses"])));
     for tweet in tweets['statuses']:
         #print("");
         #print("");
         #print(tweet)
         #print(tweet['full_text'].replace('¥n', ' '))
         try:
-            #coords = getTweetCoordinates(tweet)
+            coords = getTweetCoordinates(tweet)
             text = getTweetText(tweet);
             timestamp = getTweetTime(tweet);
         except:
@@ -83,7 +85,7 @@ if res.status_code == 200:
         print("");
         print("");
         print(text);
-        #print(coords);
+        print(coords);
         print(timestamp)# time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(timestamp)));
         #print(tweet['full_text'].replace('¥n', ' '))
 else:
