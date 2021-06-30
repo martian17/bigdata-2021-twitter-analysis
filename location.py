@@ -51,45 +51,73 @@ def getTweetTime(tweet):
     raise Exception("error, no created_at found");
 
 
+def requestSession(twitter, params, n):
+    url = "https://api.twitter.com/1.1/search/tweets.json"
+    res = twitter.get(url, params=params)
+    if res.status_code == 200:
+        tweets = json.loads(res.text)
+        # print("Number of tweets: "+str(len(tweets["statuses"])));
+        smallestId = 140974514942122803700;
+        for tweet in tweets["statuses"]:
+            params["tcount"] += 1;
+            id = int(tweet["id"])
+            if(id < smallestId):
+                smallestId = id
+            last = tweet;
+            #print("");
+            #print("");
+            #print(tweet)
+            #print(tweet['full_text'].replace('¥n', ' '))
+            try:
+                coords = getTweetCoordinates(tweet)
+                text = getTweetText(tweet);
+                timestamp = getTweetTime(tweet);
+            except:
+                continue
+            n -= 1;
+            print("");
+            print(text);
+            print(coords);
+            print(timestamp)# time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(timestamp)));
+            params["usedtcount"] += 1;
+            #print(tweet['full_text'].replace('¥n', ' '))
+        #print("*********************************");
+        #print(n);
+        #print("*********************************");
+        if(smallestId != 140974514942122803700 and n > 1):
+            # call this function again
+            params["max_id"] = str(smallestId)
+            requestSession(twitter, params, n);
+        else:
+            print("|");
+            print("|");
+            print("loaded %d tweets" % params["tcount"]);
+            print("%d tweets had valid coordinates (%d%%)" % (params["usedtcount"], params["usedtcount"]/params["tcount"]*100))
+            print("the rest had no coordinates");
+    else:
+        print("ERROR: %d" % res.status_code)
 
 twitter = OAuth1Session(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 
-url = "https://api.twitter.com/1.1/search/tweets.json"
+
 params = {
-    "q": sys.argv[2],
-    "count": sys.argv[1],
+    "q": sys.argv[1],
+    "count": "100",
     "lang": "ja",
     "tweet_mode": "extended",
     # around Tokyo 1500 km
-    #"geocode": "35.6762,139.6503,1500km"
+    "geocode": "35.6762,139.6503,1500km",
+    "tcount": 0,
+    "usedtcount": 0
     #"result_type":"recent"
 }
-if(len(sys.argv)>3):
-    params["until"] = sys.argv[3]
+if(len(sys.argv)>2):
+    params["until"] = sys.argv[2]
+
+requestSession(twitter, params, 50)
+
 #params = {'q': "BigData", 'count': 10, 'lang': "jp", 'tweet_mode': "extended"}
-res = twitter.get(url, params=params)
-if res.status_code == 200:
-    tweets = json.loads(res.text)
-    print("Number of tweets: "+str(len(tweets["statuses"])));
-    for tweet in tweets['statuses']:
-        #print("");
-        #print("");
-        #print(tweet)
-        #print(tweet['full_text'].replace('¥n', ' '))
-        try:
-            coords = getTweetCoordinates(tweet)
-            text = getTweetText(tweet);
-            timestamp = getTweetTime(tweet);
-        except:
-            continue
-        print("");
-        print("");
-        print(text);
-        print(coords);
-        print(timestamp)# time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(timestamp)));
-        #print(tweet['full_text'].replace('¥n', ' '))
-else:
-    print("ERROR: %d" % res.status_code)
+
 
 # url = "https://stream.twitter.com/1.1/statuses/filter.json"
 # req = twitter.post(
